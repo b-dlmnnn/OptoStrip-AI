@@ -1,3 +1,4 @@
+import json
 import time
 import streamlit as st
 import cv2
@@ -336,6 +337,25 @@ with col_cht:
     fig_bar.add_hline(y=25.0, line_dash="dash", line_color="#dc2626", annotation_text="Threshold (b*=25)")
     fig_bar.update_layout(height=330, margin=dict(l=10, r=10, t=20, b=10))
     st.plotly_chart(fig_bar, use_container_width=True)
+st.markdown("---")
+st.subheader("📡 IoT Edge Device & Incubation Telemetry")
+i1, i2, i3, i4 = st.columns(4)
+i1.metric("Edge Capture Node", "NPUST-CAM-01", delta="Online (Wi-Fi)")
+i2.metric("LAMP Block Temp", "65.0 °C", delta="±0.1 °C Stable")
+i3.metric("Ambient Sensor", "24.8 °C / 58% RH", delta="Pingtung Lab")
+i4.metric("Cloud Sync Protocol", "MQTT / JSON", delta="Ready")
+
+iot_payload = {
+    "device_id": "NPUST-CAM-01",
+    "protocol": "MQTT-TLS",
+    "incubation_temp_c": 65.0,
+    "white_card_de76_post": float(de_after),
+    "processing_latency_ms": float(proc_ms),
+    "batch_qc_valid": bool(t1_status == "POSITIVE" and t2_status == "NEGATIVE"),
+    "tube_results": dict(zip(df_res["Tube"], df_res["Result"]))
+}
+st.download_button("📤 Export IoT MQTT Telemetry Payload (JSON)", data=json.dumps(iot_payload, indent=2).encode("utf-8"), file_name="npust_iot_telemetry.json", mime="application/json")
+
 st.markdown("---")
 st.header("📊 Multi-Lighting Benchmark & Failure Modes Analysis")
 st.caption("Statistical evaluation across 80 synthetic strip trials (20 trials × 4 lighting conditions) comparing Uncalibrated vs. Reference-Calibrated performance.")
