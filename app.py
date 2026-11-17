@@ -197,7 +197,7 @@ def analyze_strip_tubes(bgr_img: np.ndarray, rois: list):
 st.sidebar.header("🎛️ OptoStrip-AI Controls")
 input_mode = st.sidebar.radio(
     "Image Input Source",
-    ("Physics-Informed Synthetic Strip", "Upload Real Strip Photo (JPG/PNG)")
+    ("Rule-Based Synthetic Strip", "Upload Real Strip Photo (JPG/PNG)")
 )
 
 uploaded_file = None
@@ -206,7 +206,7 @@ sim_ntc_contam = False
 sim_pc_fail = False
 strip_seed = 10
 
-if input_mode == "Physics-Informed Synthetic Strip":
+if input_mode == "Rule-Based Synthetic Strip":
     ambient_mode = st.sidebar.selectbox(
         "Ambient Lighting Condition",
         (
@@ -228,7 +228,7 @@ st.sidebar.markdown("---")
 st.sidebar.info("**Academic Transparency Note:** Single-image web prototype for reference-card white-balance calibration and colorimetric assay readout. No biological nucleic acids were used.")
 
 st.title("🧬 OptoStrip-AI: Single-Image Assay Reader & White-Balance Calibrator")
-st.markdown("**Web-Based Reference-Card Color Calibration (\(\Delta E\)) & Multi-Tube Batch Quality Control**")
+st.markdown("**Web-Based Reference-Card Color Calibration (ΔE76) & Multi-Tube Batch Quality Control**")
 
 card_detected = True
 detected_tilt = 0.0
@@ -271,7 +271,7 @@ else:
 # Delta E & White Balance Telemetry
 m1, m2, m3, m4 = st.columns(4)
 de_reduction = round(de_before - de_after, 2)
-m1.metric("White Card ΔE (Before -> After)", f"{de_before} → {de_after}", delta=f"-{de_reduction} ΔE Error")
+m1.metric("White Card ΔE76 (Pre → Post)", f"{de_before} → {de_after}", delta=f"-{de_reduction} ΔE76", delta_color="inverse")
 m2.metric("Blue Gain Factor", f"{rgb_gains.item(0):.2f}x")
 m3.metric("Green Gain Factor", f"{rgb_gains.item(1):.2f}x")
 m4.metric("Red Gain Factor", f"{rgb_gains.item(2):.2f}x")
@@ -284,7 +284,7 @@ with c_before:
 with c_after:
     st.subheader("2. White-Balance Calibrated & Segmented")
     overlay = cal_bgr.copy()
-    cv2.rectangle(overlay, (35, 85), (95, 275), (255, 140, 0), 3)
+    cv2.rectangle(overlay, (35, 85), (95, 275), (0, 140, 255), 3)
     for _, row in df_res.iterrows():
         x1, y1, x2, y2 = row["box"]
         color = (0, 0, 230) if row["Result"] == "POSITIVE" else (0, 175, 60)
