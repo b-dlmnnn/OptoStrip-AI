@@ -1,3 +1,4 @@
+import time
 import streamlit as st
 import cv2
 import numpy as np
@@ -182,7 +183,12 @@ def analyze_strip_tubes(bgr_img: np.ndarray, rois: list):
         mean_a = float(np.mean(a_vals))
 
         prob_pos = float(1.0 / (1.0 + np.exp(-np.clip((mean_b - 25.0) / 8.0, -20, 20))))
-        status = "POSITIVE" if prob_pos >= 0.5 else "NEGATIVE"
+        if 20.0 <= mean_b <= 30.0:
+            status = "INCONCLUSIVE"
+        elif mean_b > 30.0:
+            status = "POSITIVE"
+        else:
+            status = "NEGATIVE"
 
         results.append({
             "Tube": item.get("code"),
@@ -249,12 +255,15 @@ else:
     )
     source_caption = f"Synthetic Strip ({ambient_mode})"
 
+t_start = time.perf_counter()
 cal_bgr, rgb_gains, de_before, de_after = calibrate_white_balance(raw_bgr)
 qc_gate = check_image_quality_gate(raw_bgr)
 if not qc_gate.get("passed"):
     st.error("🛑 **PRE-FLIGHT QUALITY GATE FAILED:** " + " | ".join(qc_gate.get("issues")) + " — Please retake photo under diffuse lighting.")
 df_uncal = analyze_strip_tubes(raw_bgr, rois)
 df_res = analyze_strip_tubes(cal_bgr, rois)
+proc_ms = round((time.perf_counter() - t_start) * 1000.0, 1)
+st.caption(f"⏱️ Single-Image Processing Latency: **{proc_ms} ms/image** (CPU Web Runtime)")
 
 # Batch QC Banner
 t1_status = df_res.loc[df_res["Tube"] == "T1", "Result"].values.item(0)
@@ -287,7 +296,7 @@ with c_after:
     cv2.rectangle(overlay, (35, 85), (95, 275), (0, 140, 255), 3)
     for _, row in df_res.iterrows():
         x1, y1, x2, y2 = row["box"]
-        color = (0, 0, 230) if row["Result"] == "POSITIVE" else (0, 175, 60)
+        color = (0, 0, 230) if row["Result"] == "POSITIVE" else ((0, 165, 255) if row["Result"] == "INCONCLUSIVE" else (0, 175, 60))
         cv2.rectangle(overlay, (x1 - 4, y1 - 4), (x2 + 4, y2 + 4), color, 2)
         cv2.putText(overlay, row["Tube"], (x1 + 4, y1 - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
     st.image(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB), caption="Calibrated Output (Orange=Ref ROI, Red=POS, Green=NEG)", use_container_width=True)
