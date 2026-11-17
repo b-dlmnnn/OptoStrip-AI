@@ -354,6 +354,17 @@ iot_payload = {
     "batch_qc_valid": bool(t1_status == "POSITIVE" and t2_status == "NEGATIVE"),
     "tube_results": dict(zip(df_res["Tube"], df_res["Result"]))
 }
+t_mins = list(range(0, 31, 2))
+rng_iot = np.random.default_rng(strip_seed)
+temp_curve = np.round(65.0 + rng_iot.normal(0, 0.06, len(t_mins)), 2)
+df_iot = pd.DataFrame({"Incubation Time (min)": t_mins, "Heater Block Temp (°C)": temp_curve})
+
+fig_iot = px.line(df_iot, x="Incubation Time (min)", y="Heater Block Temp (°C)", markers=True, title="Simulated 30-Min LAMP Thermal Stability (Target: 65.0 ± 0.1 °C)")
+fig_iot.add_hline(y=65.0, line_dash="dash", line_color="#16a34a")
+fig_iot.update_yaxes(range=[64.5, 65.5])
+fig_iot.update_layout(height=240, margin=dict(l=10, r=10, t=35, b=10))
+st.plotly_chart(fig_iot, use_container_width=True)
+
 st.download_button("📤 Export IoT MQTT Telemetry Payload (JSON)", data=json.dumps(iot_payload, indent=2).encode("utf-8"), file_name="npust_iot_telemetry.json", mime="application/json")
 
 st.markdown("---")
