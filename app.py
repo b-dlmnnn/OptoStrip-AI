@@ -340,13 +340,13 @@ with col_cht:
 st.markdown("---")
 st.subheader("📡 IoT Edge Device & Incubation Telemetry")
 i1, i2, i3, i4 = st.columns(4)
-i1.metric("Edge Capture Node", "NPUST-CAM-01", delta="Online (Wi-Fi)")
+i1.metric("Edge Capture Node", "CAM-01", delta="Online (Wi-Fi)")
 i2.metric("LAMP Block Temp", "65.0 °C", delta="±0.1 °C Stable")
-i3.metric("Ambient Sensor", "24.8 °C / 58% RH", delta="Pingtung Lab")
-i4.metric("Cloud Sync Protocol", "MQTT / JSON", delta="Ready")
+i3.metric("Ambient Sensor", "24.8 °C", delta="58% RH (Lab)")
+i4.metric("Cloud Sync Protocol", "MQTT", delta="Ready")
 
 iot_payload = {
-    "device_id": "NPUST-CAM-01",
+    "device_id": "CAM-01",
     "protocol": "MQTT-TLS",
     "incubation_temp_c": 65.0,
     "white_card_de76_post": float(de_after),
