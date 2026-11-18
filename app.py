@@ -201,10 +201,10 @@ def analyze_strip_tubes(bgr_img: np.ndarray, rois: list):
             "box": item.get("box")
         })
     return pd.DataFrame(results)
-st.sidebar.header("🎛️ OptoStrip-AI Controls")
+st.sidebar.header("🎛️ Settings & Controls")
 input_mode = st.sidebar.radio(
     "Image Input Source",
-    ("Rule-Based Synthetic Strip", "Upload Real Strip Photo (JPG/PNG)")
+    ("Synthetic Test Strip", "Upload Real Strip Photo (JPG/PNG)")
 )
 
 uploaded_file = None
@@ -213,7 +213,7 @@ sim_ntc_contam = False
 sim_pc_fail = False
 strip_seed = 10
 
-if input_mode == "Rule-Based Synthetic Strip":
+if input_mode == "Synthetic Test Strip":
     ambient_mode = st.sidebar.selectbox(
         "Ambient Lighting Condition",
         (
@@ -232,7 +232,7 @@ else:
     st.sidebar.caption("Tip: Place a white paper reference card on the left side and 8 colored liquid tubes/cups aligned horizontally.")
 
 st.sidebar.markdown("---")
-st.sidebar.info("**Academic Transparency Note:** Single-image web prototype for reference-card white-balance calibration and colorimetric assay readout. No biological nucleic acids were used.")
+st.sidebar.info("**Note:** Using synthetic test strips to validate the white-balance calibration (ΔE76) and color readout pipeline before testing with real lab samples.")
 
 st.title("🧬 OptoStrip-AI: Single-Image Assay Reader & White-Balance Calibrator")
 st.markdown("**Web-Based Reference-Card Color Calibration (ΔE76) & Multi-Tube Batch Quality Control**")
