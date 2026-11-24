@@ -80,40 +80,56 @@ def auto_detect_and_rectify_strip(bgr_img: np.ndarray):
     resized = cv2.resize(bgr_img, (820, 360), interpolation=cv2.INTER_AREA)
     gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    _, thresh = cv2.threshold(blurred, 200, 255, cv2.THRESH_BINARY)
+    _, thresh = cv2.threshold(blurred, 185, 255, cv2.THRESH_BINARY)
 
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     rectified = resized.copy()
     card_found = False
     tilt_angle = 0.0
+    ref_box = (35, 85, 95, 275)
+    card_right_edge = 115
 
-    # Look for rectangular reference card on the left side (x < 220)
     for cnt in sorted(contours, key=cv2.contourArea, reverse=True):
         area = cv2.contourArea(cnt)
-        if 3500 < area < 45000:
+        if 3500 < area < 65000:
             rect = cv2.minAreaRect(cnt)
             (cx, cy), (rw, rh), angle = rect
-            if cx < 220 and max(rw, rh) > 100:
+            if cx < 260 and max(rw, rh) > 100:
                 card_found = True
-                # Normalize tilt angle
                 tilt_angle = angle if rw < rh else angle + 90.0
-                if abs(tilt_angle) > 0.5 and abs(tilt_angle) < 25.0:
+                if 0.5 < abs(tilt_angle) < 25.0:
                     M = cv2.getRotationMatrix2D((cx, cy), tilt_angle, 1.0)
                     rectified = cv2.warpAffine(resized, M, (820, 360), borderMode=cv2.BORDER_REPLICATE)
+                x, y, w, h = cv2.boundingRect(cnt)
+                pad_x = max(8, int(w * 0.15))
+                pad_y = max(12, int(h * 0.12))
+                ref_box = (
+                    max(0, x + pad_x),
+                    max(0, y + pad_y),
+                    min(820, x + w - pad_x),
+                    min(360, y + h - pad_y)
+                )
+                card_right_edge = x + w
                 break
 
     rois = list()
-    start_x, step_x, tube_w = 145, 82, 54
+    margin_after_card = 28
+    right_margin = 25
+    start_x = max(145, card_right_edge + margin_after_card) if card_found else 145
+    available_w = max(320, 820 - start_x - right_margin)
+    step_x = available_w / 8.0
+    tube_w = int(step_x * 0.66)
+
     for idx in range(8):
-        x1 = start_x + idx * step_x
+        x1 = int(start_x + idx * step_x)
         x2 = x1 + tube_w
         role = "PC (Pos Ctrl)" if idx == 0 else ("NTC (Neg Ctrl)" if idx == 1 else f"Sample {idx - 1}")
         rois.append({
             "code": f"T{idx + 1}",
             "role": role,
-            "box": (x1 + 8, 155, x2 - 8, 265)
+            "box": (x1 + 6, 155, x2 - 6, 265)
         })
-    return rectified, rois, card_found, round(tilt_angle, 2)
+    return rectified, rois, card_found, round(tilt_angle, 2), ref_box
 
 
 def compute_lab_delta_e(bgr_img: np.ndarray, ref_box=(35, 85, 95, 275)):
@@ -243,7 +259,7 @@ detected_tilt = 0.0
 if input_mode == "Upload Real Strip Photo (JPG/PNG)" and uploaded_file is not None:
     pil_p = Image.open(uploaded_file).convert("RGB")
     bgr_in = cv2.cvtColor(np.array(pil_p), cv2.COLOR_RGB2BGR)
-    raw_bgr, rois, card_detected, detected_tilt = auto_detect_and_rectify_strip(bgr_in)
+    raw_bgr, rois, card_detected, detected_tilt, detected_ref_box = auto_detect_and_rectify_strip(bgr_in)
     source_caption = f"Uploaded Photo: {uploaded_file.name} (Tilt Corrected: {detected_tilt}°)"
     if not card_detected:
         st.info("ℹ️ **Auto-Localization Note:** Left white reference card contour was not isolated automatically; using standard grid alignment.")
